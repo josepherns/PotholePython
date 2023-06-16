@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask OpenStreetMap Example</title>
+    <script src="{{ url_for('static', filename='leaflet.js') }}"></script>
+6	<link rel="stylesheet" href="{{ url_for('static', filename='leaflet.css') }}" />
+</head>
+<body>
+	<img src="{{ url_for('video_feed') }}" width="100%">
+    <div id="map" style="height: 700px;"></div>
+    <script>
+        var mymap = L.map('map').setView([{{ lat }}, {{ lon }}], 18);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            maxZoom: 18,
+            id: 'mapbox/streets-v11',
+            tileSize: 512,
+            zoomOffset: -1
+        }).addTo(mymap);
+        var marker = L.marker([{{ lat }}, {{ lon }}]).addTo(mymap);
+        function update_location() {
+            fetch('/location')
+                .then(response => response.json())
+                .then(data => {
+                    var new_lat = data.lat;
+                    var new_lon = data.lon;
+                    marker.setLatLng([new_lat, new_lon]);
+                    mymap.setView([new_lat, new_lon]);
+                });
+            console.log("yey")
+            let counter=0;
+			fetch('http://192.168.214.200:9191/getAllPothole')
+				.then(response => response.json())
+				.then(data =>{
+					data.forEach(x =>{
+                        
+                        if(counter < 10){
+                            if(x.latitude <= x.latitude+0.001 || x.latitude >= x.latitude-0.001 || x.longitude <=x.longitude+0.001 || x.longitude >= x.longitude-0.001){
+                                L.marker([x.latitude,x.longitude]).addTo(mymap);
+                                counter++;
+                                console.log(x.latitude)
+                            }
+                            }
+						});
+					});
+        }
+        setInterval(update_location, 5000);
+    </script>
+</body>
+</html>
